@@ -6,14 +6,17 @@ import cvxopt
 
 
 class Svm(object):
-    def __init__(self, C=1.0, mini_batch_size=None, max_iter=1000, learning_rate=0.001):
+    def __init__(self, C=1.0, mini_batch_size=None, max_iter=1000, learning_rate=0.001, epsilon=0.00001,
+                 check_stopping_condition=False):
         self.max_iter = max_iter
         self.learning_rate = learning_rate
         self.C = C
         self.mini_batch_size = mini_batch_size
+        self.epsilon = epsilon
+        self.check_stopping_conditions = check_stopping_condition
 
-    # I use gradient decent method to learn parameters of the linear model (linear SVM) if mini_batch_size is None
-    # or stochastic gradient decent otherwise
+    # I use (sub) gradient decent method to learn parameters of the linear model (linear SVM) if mini_batch_size is None
+    # or stochastic (sub) gradient decent otherwise
     def train(self, X, y):
         if self.mini_batch_size is None:
             self.mini_batch_size = X.shape[0]
@@ -23,6 +26,9 @@ class Svm(object):
         self.loss.append(self._compute_loss(X, y))
 
         for i in range(self.max_iter):
+            weights_prev = np.copy(self.weights)
+            bias_prev = np.copy(self.bias)
+
             if self.mini_batch_size == X.shape[0]:
                 self._weights_bias_update(X, y)
             else:
@@ -30,11 +36,23 @@ class Svm(object):
                 self._weights_bias_update(X_batch, y_batch)
             self.loss.append(self._compute_loss(X, y))
 
+            if self.check_stopping_conditions:
+                if self._stopping_conditions(self.loss[-1], self.loss[-2], np.hstack((self.weights, self.bias)),
+                                             np.hstack((weights_prev, bias_prev))):
+                    break
+
     # we want mini_batch to have equal number of elements with label -1 and +1
     # in case of odd mini_batch_size (excluding 1) number of elements differs on 1 (size // 2 and size // 2 + size % 2)
     # TODO: check if mini_batch size // 2 is lower then the number of elements in the smallest class
     # TODO: add training by epochs like in deep learning
-    # TODO: add stopping criterion like norm of difference between weihtg vectors of difference between objective func
+    def _stopping_conditions(self, loss_cur, loss_prev, parameters_cur, parameters_prev):
+        if np.abs(loss_cur - loss_prev) < self.epsilon:
+            return True
+        if np.linalg.norm(parameters_cur - parameters_prev) < self.epsilon:
+            return True
+
+        return False
+
     def _sample_mini_batch(self, X, y, size):
         y_neg = y[y == -1]
         X_neg = X[y == -1]
