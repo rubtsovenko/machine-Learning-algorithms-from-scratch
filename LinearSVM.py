@@ -3,10 +3,8 @@ import copy
 from tqdm import tqdm
 import time
 
-# kernel = 'linear' or 'rbf' or 'poly'
+
 # labels y have to be -1 or +1
-
-
 class LinearSvm(object):
     def __init__(self, C=1.0, mini_batch_size=None, max_iter=1000, learning_rate=0.001, epsilon=0.00001,
                  check_stopping_condition=False, random_seed=None):

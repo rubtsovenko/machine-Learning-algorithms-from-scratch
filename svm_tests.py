@@ -1,4 +1,4 @@
-from svm_linear import LinearSvm
+from LinearSVM import LinearSvm
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.svm import LinearSVC
